@@ -137,17 +137,27 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
 // ---- Helpers ----
 
+function toBool(v: any): boolean {
+  return v === 1 || v === "1" || v === true || v === "true";
+}
+
+function toNumOrNull(v: any): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 function rowToDayEntry(row: any): DayEntry {
   return {
     id: row.id,
-    date: row.date,
-    tradesCount: row.tradesCount ?? 0,
-    rResult: row.rResult ?? null,
-    pnlPercent: row.pnlPercent ?? null,
+    date: String(row.date),
+    tradesCount: Number(row.tradesCount ?? 0),
+    rResult: toNumOrNull(row.rResult),
+    pnlPercent: toNumOrNull(row.pnlPercent),
     note: row.note ?? null,
-    heldPlan: row.heldPlan === 1,
-    outOfSetup: row.outOfSetup === 1,
-    movedSL: row.movedSL === 1,
-    revengeTrade: row.revengeTrade === 1,
+    heldPlan: toBool(row.heldPlan),
+    outOfSetup: toBool(row.outOfSetup),
+    movedSL: toBool(row.movedSL),
+    revengeTrade: toBool(row.revengeTrade),
   };
 }
