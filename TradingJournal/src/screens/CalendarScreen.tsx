@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -39,30 +39,6 @@ export default function CalendarScreen() {
     }
   }
 
-  function getMarkedDates() {
-    const marked: Record<string, any> = {};
-    entries.forEach((entry, date) => {
-      const result = entry.rResult ?? entry.pnlPercent ?? 0;
-      let color = '#9e9e9e'; // gray
-      if (result > 0) color = '#4caf50'; // green
-      else if (result < 0) color = '#f44336'; // red
-
-      marked[date] = {
-        customStyles: {
-          container: {
-            backgroundColor: color,
-            borderRadius: 6,
-          },
-          text: {
-            color: '#fff',
-            fontWeight: 'bold',
-          },
-        },
-      };
-    });
-    return marked;
-  }
-
   function renderDayContent(date: DateData) {
     const entry = entries.get(date.dateString);
     const isToday = date.dateString === todayString();
@@ -77,33 +53,44 @@ export default function CalendarScreen() {
 
     const isBreach = entry ? entry.tradesCount > maxTrades : false;
 
+    const containerStyles = [
+      styles.dayContainer,
+      { backgroundColor: bgColor } as const,
+      isToday ? styles.todayBorder : undefined,
+    ];
+
     return (
-      <View style={[styles.dayContainer, { backgroundColor: bgColor }, isToday && styles.todayBorder]}>
-        <Text style={[styles.dayNumber, entry ? styles.dayNumberWhite : null]}>
-          {date.day}
-        </Text>
-        {entry ? (
-          <View style={styles.dayInfo}>
-            <Text style={styles.dayInfoText}>
-              {entry.tradesCount}t
-            </Text>
-            {entry.rResult !== null ? (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => navigation.navigate('DayEdit', { date: date.dateString })}
+      >
+        <View style={containerStyles}>
+          <Text style={[styles.dayNumber, entry ? styles.dayNumberWhite : undefined]}>
+            {date.day}
+          </Text>
+          {entry ? (
+            <View style={styles.dayInfo}>
               <Text style={styles.dayInfoText}>
-                {entry.rResult >= 0 ? '+' : ''}{entry.rResult.toFixed(1)}R
+                {entry.tradesCount}t
               </Text>
-            ) : entry.pnlPercent !== null ? (
-              <Text style={styles.dayInfoText}>
-                {entry.pnlPercent >= 0 ? '+' : ''}{entry.pnlPercent.toFixed(1)}%
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
-        {isBreach && (
-          <View style={styles.breachBadge}>
-            <Text style={styles.breachText}>!</Text>
-          </View>
-        )}
-      </View>
+              {entry.rResult !== null ? (
+                <Text style={styles.dayInfoText}>
+                  {entry.rResult >= 0 ? '+' : ''}{entry.rResult.toFixed(1)}R
+                </Text>
+              ) : entry.pnlPercent !== null ? (
+                <Text style={styles.dayInfoText}>
+                  {entry.pnlPercent >= 0 ? '+' : ''}{entry.pnlPercent.toFixed(1)}%
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+          {isBreach ? (
+            <View style={styles.breachBadge}>
+              <Text style={styles.breachText}>!</Text>
+            </View>
+          ) : null}
+        </View>
+      </TouchableOpacity>
     );
   }
 
@@ -115,22 +102,9 @@ export default function CalendarScreen() {
           const ym = `${month.year}-${String(month.month).padStart(2, '0')}`;
           setCurrentMonth(ym);
         }}
-        onDayPress={(day: DateData) => {
-          navigation.navigate('DayEdit', { date: day.dateString });
-        }}
         dayComponent={({ date }: { date?: DateData }) => {
           if (!date) return null;
-          return (
-            <View
-              style={{ alignItems: 'center' }}
-              onStartShouldSetResponder={() => true}
-              onResponderRelease={() => {
-                navigation.navigate('DayEdit', { date: date.dateString });
-              }}
-            >
-              {renderDayContent(date)}
-            </View>
-          );
+          return renderDayContent(date);
         }}
         hideExtraDays={true}
         theme={{
@@ -162,7 +136,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 2,
-    position: 'relative',
   },
   todayBorder: {
     borderWidth: 2,
@@ -171,7 +144,6 @@ const styles = StyleSheet.create({
   dayNumber: {
     fontSize: 13,
     color: '#ccc',
-    fontWeight: '600',
   },
   dayNumberWhite: {
     color: '#fff',
@@ -182,7 +154,6 @@ const styles = StyleSheet.create({
   dayInfoText: {
     fontSize: 8,
     color: '#fff',
-    fontWeight: '600',
   },
   breachBadge: {
     position: 'absolute',
@@ -198,6 +169,5 @@ const styles = StyleSheet.create({
   breachText: {
     color: '#fff',
     fontSize: 9,
-    fontWeight: 'bold',
   },
 });
