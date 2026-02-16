@@ -1,29 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getDayEntriesForMonth, DayEntry, getSetting } from '../db/queries';
 import { todayString } from '../utils/date';
 import CalendarGrid from '../components/CalendarGrid';
 
-type RootStackParamList = {
-  CalendarMain: undefined;
-  DayEdit: { date: string };
-};
+interface Props {
+  onDayPress: (date: string) => void;
+}
 
-export default function CalendarScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export default function CalendarScreen({ onDayPress }: Props) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1); // 1-12
+  const [month, setMonth] = useState(today.getMonth() + 1);
   const [entries, setEntries] = useState<Map<string, DayEntry>>(new Map());
   const [maxTrades, setMaxTrades] = useState(2);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [year, month])
-  );
+  useEffect(() => {
+    loadData();
+  }, [year, month]);
 
   async function loadData() {
     try {
@@ -68,7 +62,7 @@ export default function CalendarScreen() {
         entries={entries}
         maxTrades={maxTrades}
         todayStr={todayString()}
-        onDayPress={(dateStr) => navigation.navigate('DayEdit', { date: dateStr })}
+        onDayPress={onDayPress}
         onPrevMonth={goPrev}
         onNextMonth={goNext}
       />

@@ -1,16 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting } from '../db/queries';
 
 export default function SettingsScreen() {
   const [maxTrades, setMaxTrades] = useState('2');
 
-  useFocusEffect(
-    useCallback(() => {
-      loadSettings();
-    }, [])
-  );
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
   async function loadSettings() {
     try {
@@ -37,8 +34,6 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Settings</Text>
-
       <Text style={styles.label}>Max Trades Per Day</Text>
       <Text style={styles.hint}>
         Days exceeding this limit will show a "Breach" badge on the calendar.
@@ -71,13 +66,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
     padding: 16,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#bb86fc',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
   label: {
     color: '#ccc',
     fontSize: 15,
@@ -106,7 +94,6 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
   },
   infoBox: {
@@ -119,7 +106,6 @@ const styles = StyleSheet.create({
   infoTitle: {
     color: '#bb86fc',
     fontSize: 16,
-    fontWeight: 'bold',
     marginBottom: 8,
   },
   infoText: {

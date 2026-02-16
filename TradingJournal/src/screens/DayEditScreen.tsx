@@ -7,9 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Switch,
 } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import {
   getDayEntry,
   upsertDayEntry,
@@ -20,15 +18,12 @@ import {
 } from '../db/queries';
 import { isValidTime, parseFloatOrNull } from '../utils/date';
 
-type ParamList = {
-  DayEdit: { date: string };
-};
+interface Props {
+  date: string;
+  onBack: () => void;
+}
 
-export default function DayEditScreen() {
-  const route = useRoute<RouteProp<ParamList, 'DayEdit'>>();
-  const navigation = useNavigation();
-  const { date } = route.params;
-
+export default function DayEditScreen({ date, onBack }: Props) {
   const [tradesCount, setTradesCount] = useState('0');
   const [rResult, setRResult] = useState('');
   const [pnlPercent, setPnlPercent] = useState('');
@@ -88,7 +83,7 @@ export default function DayEditScreen() {
     try {
       await upsertDayEntry(entry);
       await setTradeTimesForDay(date, tradeTimes);
-      navigation.goBack();
+      onBack();
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to save');
     }
@@ -103,7 +98,7 @@ export default function DayEditScreen() {
         onPress: async () => {
           try {
             await deleteDayEntry(date);
-            navigation.goBack();
+            onBack();
           } catch (e: any) {
             Alert.alert('Error', e?.message ?? 'Failed to delete');
           }
@@ -164,7 +159,7 @@ export default function DayEditScreen() {
         style={[styles.input, styles.noteInput]}
         value={note}
         onChangeText={setNote}
-        multiline
+        multiline={true}
         numberOfLines={3}
         placeholder="Trading notes..."
         placeholderTextColor="#666"
@@ -172,42 +167,10 @@ export default function DayEditScreen() {
 
       <Text style={styles.sectionTitle}>Quality Checklist</Text>
 
-      <View style={styles.checkRow}>
-        <Text style={styles.checkLabel}>Held Plan</Text>
-        <Switch
-          value={heldPlan}
-          onValueChange={setHeldPlan}
-          trackColor={{ false: '#555', true: '#4caf50' }}
-          thumbColor={heldPlan ? '#81c784' : '#999'}
-        />
-      </View>
-      <View style={styles.checkRow}>
-        <Text style={styles.checkLabel}>Out of Setup</Text>
-        <Switch
-          value={outOfSetup}
-          onValueChange={setOutOfSetup}
-          trackColor={{ false: '#555', true: '#f44336' }}
-          thumbColor={outOfSetup ? '#e57373' : '#999'}
-        />
-      </View>
-      <View style={styles.checkRow}>
-        <Text style={styles.checkLabel}>Moved SL</Text>
-        <Switch
-          value={movedSL}
-          onValueChange={setMovedSL}
-          trackColor={{ false: '#555', true: '#f44336' }}
-          thumbColor={movedSL ? '#e57373' : '#999'}
-        />
-      </View>
-      <View style={styles.checkRow}>
-        <Text style={styles.checkLabel}>Revenge Trade</Text>
-        <Switch
-          value={revengeTrade}
-          onValueChange={setRevengeTrade}
-          trackColor={{ false: '#555', true: '#f44336' }}
-          thumbColor={revengeTrade ? '#e57373' : '#999'}
-        />
-      </View>
+      <CheckRow label="Held Plan" value={heldPlan} onToggle={setHeldPlan} positiveColor="#4caf50" />
+      <CheckRow label="Out of Setup" value={outOfSetup} onToggle={setOutOfSetup} positiveColor="#f44336" />
+      <CheckRow label="Moved SL" value={movedSL} onToggle={setMovedSL} positiveColor="#f44336" />
+      <CheckRow label="Revenge Trade" value={revengeTrade} onToggle={setRevengeTrade} positiveColor="#f44336" />
 
       <Text style={styles.sectionTitle}>Trade Times</Text>
       {tradeTimes.map((t, i) => (
@@ -221,7 +184,7 @@ export default function DayEditScreen() {
 
       <View style={styles.addTimeRow}>
         <TextInput
-          style={[styles.input, { flex: 1, marginBottom: 0, marginRight: 8 }]}
+          style={[styles.input, styles.timeInput]}
           value={newTime}
           onChangeText={setNewTime}
           placeholder="HH:MM"
@@ -237,15 +200,31 @@ export default function DayEditScreen() {
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
           <Text style={styles.saveBtnText}>Save</Text>
         </TouchableOpacity>
-        {isExisting && (
+        {isExisting ? (
           <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
             <Text style={styles.deleteBtnText}>Delete</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
-      <View style={{ height: 40 }} />
+      <View style={styles.bottomSpacer} />
     </ScrollView>
+  );
+}
+
+function CheckRow({ label, value, onToggle, positiveColor }: {
+  label: string;
+  value: boolean;
+  onToggle: (v: boolean) => void;
+  positiveColor: string;
+}) {
+  return (
+    <TouchableOpacity style={styles.checkRow} onPress={() => onToggle(!value)} activeOpacity={0.7}>
+      <Text style={styles.checkLabel}>{label}</Text>
+      <View style={[styles.checkbox, value ? { backgroundColor: positiveColor } : undefined]}>
+        {value ? <Text style={styles.checkmark}>{'V'}</Text> : null}
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -259,7 +238,6 @@ const styles = StyleSheet.create({
   },
   dateHeader: {
     fontSize: 22,
-    fontWeight: 'bold',
     color: '#bb86fc',
     marginBottom: 16,
     textAlign: 'center',
@@ -286,7 +264,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 17,
-    fontWeight: 'bold',
     color: '#bb86fc',
     marginTop: 20,
     marginBottom: 10,
@@ -295,12 +272,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 4,
   },
   checkLabel: {
     color: '#ddd',
     fontSize: 15,
+  },
+  checkbox: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#555',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
   },
   timeRow: {
     flexDirection: 'row',
@@ -323,13 +313,17 @@ const styles = StyleSheet.create({
   },
   removeBtnText: {
     color: '#fff',
-    fontWeight: 'bold',
   },
   addTimeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
     marginBottom: 16,
+  },
+  timeInput: {
+    flex: 1,
+    marginBottom: 0,
+    marginRight: 8,
   },
   addBtn: {
     backgroundColor: '#bb86fc',
@@ -339,7 +333,6 @@ const styles = StyleSheet.create({
   },
   addBtnText: {
     color: '#121212',
-    fontWeight: 'bold',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -356,7 +349,6 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
   },
   deleteBtn: {
@@ -368,7 +360,9 @@ const styles = StyleSheet.create({
   },
   deleteBtnText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

@@ -1,6 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { getDayEntriesForRange, getTradeTimesForRange, getSetting, TradeTime } from '../db/queries';
 import { getLast7DaysRange, getLast7Days } from '../utils/date';
 import { computeWeekSummary, WeekSummary } from '../utils/summaries';
@@ -13,11 +12,9 @@ export default function WeekSummaryScreen() {
   const [summary, setSummary] = useState<WeekSummary | null>(null);
   const [tradeTimes, setTradeTimes] = useState<TradeTime[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadSummary();
-    }, [])
-  );
+  useEffect(() => {
+    loadSummary();
+  }, []);
 
   async function loadSummary() {
     try {
@@ -45,8 +42,6 @@ export default function WeekSummaryScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Week Summary (Last 7 Days)</Text>
-
       <View style={styles.statsGrid}>
         <StatCard label="Total R" value={`${summary.totalR >= 0 ? '+' : ''}${summary.totalR}R`}
           color={summary.totalR >= 0 ? '#4caf50' : '#f44336'} />
@@ -94,12 +89,6 @@ const styles = StyleSheet.create({
     color: '#aaa',
     textAlign: 'center',
     marginTop: 40,
-  },
-  title: {
-    fontSize: 20,
-    color: '#bb86fc',
-    marginBottom: 16,
-    textAlign: 'center',
   },
   statsGrid: {
     flexDirection: 'row',
